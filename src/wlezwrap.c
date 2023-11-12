@@ -19,11 +19,11 @@ static char CHARMAP[] = {
 };
 
 // default do-nothing functions
-static void f_resize(void* data, uint32_t width, uint32_t height) {};
-static void f_quit(void* data) {};
-static void f_motion(void* data, float x, float y) {};
-static void f_button(void* data, uint8_t button, bool pressed) {};
-static void f_key(void* data, char ch, bool pressed) {};
+static void f_resize(void* data, uint32_t width, uint32_t height) {}
+static void f_quit(void* data) {}
+static void f_motion(void* data, float x, float y) {}
+static void f_button(void* data, uint8_t button, bool pressed) {}
+static void f_key(void* data, char ch, bool pressed) {}
 
 // wrappers
 static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
