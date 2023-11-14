@@ -1,3 +1,6 @@
+#ifndef INCLUDEGUARD_WLEZWRAPH
+#define INCLUDEGUARD_WLEZWRAPH
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -16,3 +19,5 @@ typedef struct {
 void wlezwrap_confgen(Wlezwrap* wew);
 void wlezwrap_init(Wlezwrap* wew);
 void wlezwrap_deinit(Wlezwrap* wew);
+
+#endif
