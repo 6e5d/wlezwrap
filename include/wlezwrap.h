@@ -1,8 +1,8 @@
 #ifndef INCLUDEGUARD_WLEZWRAPH
 #define INCLUDEGUARD_WLEZWRAPH
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "../../wlbasic/include/wlbasic.h"
 
