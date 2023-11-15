@@ -21,9 +21,9 @@ static const char CHARMAP[] = {
 };
 
 // default do-nothing functions
-static void f_resize(void* data, uint32_t width, uint32_t height) {}
+static void f_resize(void* data, uint32_t w, uint32_t h) {}
 static void f_quit(void* data) {}
-static void f_motion(void* data, float x, float y) {}
+static void f_motion(void* data, double x, double y, double pressure) {}
 static void f_button(void* data, uint8_t button, bool pressed) {}
 static void f_key(void* data, char ch, bool pressed) {}
 
@@ -49,7 +49,9 @@ static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
 	uint32_t time, wl_fixed_t x, wl_fixed_t y
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_motion(wew->data, (float)x, (float)y);
+	double mx = wl_fixed_to_double(x);
+	double my = wl_fixed_to_double(y);
+	wew->f_motion(wew->data, mx, my, wew->pressure);
 }
 
 static void wrapper_quit(void* data, struct xdg_toplevel* toplevel) {
@@ -77,7 +79,9 @@ static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
 static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
 	wl_fixed_t x, wl_fixed_t y) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_motion(wew->data, (float)x, (float)y);
+	double xx = wl_fixed_to_double(x);
+	double yy = wl_fixed_to_double(y);
+	wew->f_motion(wew->data, xx, yy, wew->pressure);
 }
 
 static void wrapper_tabtool_down(void *data, struct zwp_tablet_tool_v2* tool,
@@ -123,7 +127,7 @@ static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
 static void wrapper_tabtool_pressure(void *data,
 	struct zwp_tablet_tool_v2* tool, uint32_t pressure) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->pressure = (float)pressure;
+	wew->pressure = (double)pressure / 65536.0;
 }
 
 
