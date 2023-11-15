@@ -14,6 +14,8 @@ typedef struct {
 	void (*f_button)(void* data, uint8_t button, bool pressed);
 	void (*f_key)(void* data, char ch, bool pressed);
 	void* data;
+	float pressure;
+	struct zwp_tablet_tool_v2* peraser; // eraser is treated as middle button
 } Wlezwrap;
 
 void wlezwrap_confgen(Wlezwrap* wew);

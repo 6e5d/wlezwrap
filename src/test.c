@@ -6,14 +6,14 @@
 
 #include "../include/wlezwrap.h"
 
-static bool quit = false;
-
 static void f_quit(void* data) {
-	quit = true;
+	*(bool*)data = true;
 }
 
 int main(void) {
+	bool quit = false;
 	Wlezwrap wew = {0};
+	wew.data = (void*)&quit;
 	wew.f_quit = f_quit;
 	wlezwrap_confgen(&wew);
 	wlezwrap_init(&wew);
