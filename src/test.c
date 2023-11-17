@@ -6,15 +6,17 @@
 
 #include "../include/wlezwrap.h"
 
-static void f_quit(void* data) {
-	*(bool*)data = true;
+static void f_event(void* data, uint8_t type, WlezwrapEvent *event) {
+	if (type == 0) {
+		*(bool*)data = true;
+	}
 }
 
 int main(void) {
 	bool quit = false;
 	Wlezwrap wew = {0};
 	wew.data = (void*)&quit;
-	wew.f_quit = f_quit;
+	wew.event = f_event;
 	wlezwrap_confgen(&wew);
 	wlezwrap_init(&wew);
 	while (!quit) {

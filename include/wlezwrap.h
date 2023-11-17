@@ -1,18 +1,30 @@
 #ifndef INCLUDEGUARD_WLEZWRAPH
 #define INCLUDEGUARD_WLEZWRAPH
 
+#define WLEZWRAP_LCLICK -1
+#define WLEZWRAP_MCLICK -2
+#define WLEZWRAP_RCLICK -3
+#define WLEZWRAP_LSHIFT -4
+#define WLEZWRAP_LCTRL -5
+#define WLEZWRAP_LALT -6
+
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "../../wlbasic/include/wlbasic.h"
 
+bool wlezwrap_isclick(int8_t key);
+
+typedef union {
+	uint8_t quit;
+	uint32_t resize[2];
+	double motion[3];
+	int8_t key[2];
+} WlezwrapEvent;
+
 typedef struct {
 	Wlbasic wl;
-	void (*f_resize)(void* data, uint32_t w, uint32_t h);
-	void (*f_quit)(void* data);
-	void (*f_motion)(void* data, double x, double y, double pressure);
-	void (*f_button)(void* data, uint8_t button, bool pressed);
-	void (*f_key)(void* data, char ch, bool pressed);
+	void (*event)(void* data, uint8_t type, WlezwrapEvent *event);
 	void* data;
 	struct zwp_tablet_tool_v2* peraser; // eraser is treated as middle button
 	double pressure;

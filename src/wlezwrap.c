@@ -3,14 +3,13 @@
 
 #include "../include/wlezwrap.h"
 
-// definitions of non char key should be formalized
-static const char CHARMAP[] = {
+static const int8_t CHARMAP[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 'q', 'w', 'e', 'r',
-	't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\r', -2,
+	't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\r', WLEZWRAP_LCTRL,
 	'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	0, 0, -1, 0, 'z', 'x', 'c', 'v', 'b', 'n',
-	'm', ',', '.', '/', 0, 0, -3, ' ', 0, 0,
+	0, 0, WLEZWRAP_LSHIFT, 0, 'z', 'x', 'c', 'v', 'b', 'n',
+	'm', ',', '.', '/', 0, 0, WLEZWRAP_LALT, ' ', 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -20,43 +19,52 @@ static const char CHARMAP[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
+bool wlezwrap_isclick(int8_t key) {
+	return (key <= -1 && key >= -3);
+}
+
 // default do-nothing functions
-static void f_resize(void* data, uint32_t w, uint32_t h) {}
-static void f_quit(void* data) {}
-static void f_motion(void* data, double x, double y, double pressure) {}
-static void f_button(void* data, uint8_t button, bool pressed) {}
-static void f_key(void* data, char ch, bool pressed) {}
+static void f_event(void* data, uint8_t type, WlezwrapEvent *event) {}
 
 // wrappers
 static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
 	uint32_t serial, uint32_t time, uint32_t button, uint32_t state
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	uint8_t b = 0;
+	int8_t b = 0;
 	if (button == 272) {
-		b = 0;
+		b = WLEZWRAP_LCLICK;
 	} else if (button == 273) {
-		b = 2;
+		b = WLEZWRAP_RCLICK;
 	} else if (button == 274) {
-		b = 1;
+		b = WLEZWRAP_MCLICK;
 	} else {
 		return;
 	}
-	wew->f_button(wew->data, b, state == WL_POINTER_BUTTON_STATE_PRESSED);
+	WlezwrapEvent e;
+	e.key[0] = b;
+	e.key[1] = 0;
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		e.key[1] = 1;
+	}
+	wew->event(wew->data, 3, &e);
 }
 
 static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
 	uint32_t time, wl_fixed_t x, wl_fixed_t y
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	double mx = wl_fixed_to_double(x);
-	double my = wl_fixed_to_double(y);
-	wew->f_motion(wew->data, mx, my, wew->pressure);
+	WlezwrapEvent e;
+	e.motion[0] = wl_fixed_to_double(x);
+	e.motion[1] = wl_fixed_to_double(y);
+	e.motion[2] = wew->pressure;
+	wew->event(wew->data, 2, &e);
 }
 
 static void wrapper_quit(void* data, struct xdg_toplevel* toplevel) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_quit(wew->data);
+	WlezwrapEvent e = {0};
+	wew->event(wew->data, 0, &e);
 }
 
 static void wrapper_resize(void* data, struct xdg_toplevel* toplevel,
@@ -64,7 +72,10 @@ static void wrapper_resize(void* data, struct xdg_toplevel* toplevel,
 ) {
 	if (width <= 0 || height <= 0) { return; }
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_resize(wew->data, (uint32_t)width, (uint32_t)height);
+	WlezwrapEvent e;
+	e.resize[0] = (uint32_t)width;
+	e.resize[1] = (uint32_t)height;
+	wew->event(wew->data, 1, &e);
 }
 
 static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
@@ -72,26 +83,39 @@ static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (key >= 128) { return; }
-	char c = CHARMAP[(size_t) key];
-	wew->f_key(wew->data, c, state == WL_KEYBOARD_KEY_STATE_PRESSED);
+	WlezwrapEvent e;
+	e.key[0] = CHARMAP[(size_t) key];
+	e.key[1] = 0;
+	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+		e.key[1] = 1;
+	}
+	wew->event(wew->data, 3, &e);
 }
 
 static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
 	wl_fixed_t x, wl_fixed_t y) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	double xx = wl_fixed_to_double(x);
-	double yy = wl_fixed_to_double(y);
-	wew->f_motion(wew->data, xx, yy, wew->pressure);
+	WlezwrapEvent e;
+	e.motion[0] = wl_fixed_to_double(x);
+	e.motion[1] = wl_fixed_to_double(y);
+	e.motion[2] = wew->pressure;
+	wew->event(wew->data, 2, &e);
 }
 
 static void wrapper_tabtool_down(void *data, struct zwp_tablet_tool_v2* tool,
 	uint32_t serial) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_button(wew->data, 0, true);
+	WlezwrapEvent e;
+	e.key[0] = WLEZWRAP_LCLICK;
+	e.key[1] = 1;
+	wew->event(wew->data, 3, &e);
 }
 static void wrapper_tabtool_up(void *data, struct zwp_tablet_tool_v2* tool) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->f_button(wew->data, 0, false);
+	WlezwrapEvent e;
+	e.key[0] = WLEZWRAP_LCLICK;
+	e.key[1] = 0;
+	wew->event(wew->data, 3, &e);
 }
 
 static void wrapper_tabtool_pin(void *data, struct zwp_tablet_tool_v2* tool,
@@ -101,27 +125,37 @@ static void wrapper_tabtool_pin(void *data, struct zwp_tablet_tool_v2* tool,
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (tool == wew->peraser) {
-		wew->f_button(wew->data, 1, true);
+		WlezwrapEvent e;
+		e.key[0] = WLEZWRAP_MCLICK;
+		e.key[1] = 1;
+		wew->event(wew->data, 3, &e);
 	}
 }
 
 static void wrapper_tabtool_pout(void *data, struct zwp_tablet_tool_v2* tool) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (tool == wew->peraser) {
-		wew->f_button(wew->data, 1, false);
+		WlezwrapEvent e;
+		e.key[0] = WLEZWRAP_MCLICK;
+		e.key[1] = 0;
+		wew->event(wew->data, 3, &e);
 	}
 }
 
 static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
 	uint32_t serial, uint32_t button, uint32_t state) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
+	WlezwrapEvent e;
+	e.key[0] = WLEZWRAP_MCLICK;
 	// TODO: what does button id mean?
-	uint8_t bid = 1;
 	if (button == 331) {
-		bid = 2;
+		e.key[0] = WLEZWRAP_RCLICK;
 	}
-	wew->f_button(wew->data, bid,
-		state == ZWP_TABLET_TOOL_V2_BUTTON_STATE_PRESSED);
+	e.key[1] = 0;
+	if (state == ZWP_TABLET_TOOL_V2_BUTTON_STATE_PRESSED) {
+		e.key[1] = 1;
+	}
+	wew->event(wew->data, 3, &e);
 }
 
 static void wrapper_tabtool_pressure(void *data,
@@ -142,11 +176,7 @@ static void wrapper_tabtool_type(void *data, struct zwp_tablet_tool_v2* tool,
 void wlezwrap_confgen(Wlezwrap* wew) {
 	wlbasic_config_default(&wew->wl.conf);
 	wew->wl.next = (void*)wew; // loopback
-	wew->f_resize = f_resize;
-	wew->f_quit = f_quit;
-	wew->f_motion = f_motion;
-	wew->f_button = f_button;
-	wew->f_key = f_key;
+	wew->event = f_event;
 }
 
 void wlezwrap_init(Wlezwrap* wew) {
