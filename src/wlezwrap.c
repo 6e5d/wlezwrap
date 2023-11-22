@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <wayland-client.h>
 
 #include "../include/wlezwrap.h"
@@ -53,10 +54,11 @@ static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
 static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
 	uint32_t time, wl_fixed_t x, wl_fixed_t y
 ) {
-	Wlezwrap* wew = ((Wlbasic*)data)->next;
+	Wlbasic *wl = data;
+	Wlezwrap* wew = wl->next;
 	WlezwrapEvent e;
-	e.motion[0] = wl_fixed_to_double(x);
-	e.motion[1] = wl_fixed_to_double(y);
+	e.motion[0] = wl_fixed_to_double(x) * (double)wl->scale;
+	e.motion[1] = wl_fixed_to_double(y) * (double)wl->scale;
 	e.motion[2] = wew->pressure;
 	wew->event(wew->data, 2, &e);
 }
@@ -71,10 +73,11 @@ static void wrapper_resize(void* data, struct xdg_toplevel* toplevel,
 	int32_t width, int32_t height, struct wl_array* states
 ) {
 	if (width <= 0 || height <= 0) { return; }
-	Wlezwrap* wew = ((Wlbasic*)data)->next;
+	Wlbasic *wl = data;
+	Wlezwrap* wew = wl->next;
 	WlezwrapEvent e;
-	e.resize[0] = (uint32_t)width;
-	e.resize[1] = (uint32_t)height;
+	e.resize[0] = (uint32_t)(width * wl->scale);
+	e.resize[1] = (uint32_t)(height * wl->scale);
 	wew->event(wew->data, 1, &e);
 }
 
@@ -94,10 +97,11 @@ static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
 
 static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
 	wl_fixed_t x, wl_fixed_t y) {
-	Wlezwrap* wew = ((Wlbasic*)data)->next;
+	Wlbasic *wl = data;
+	Wlezwrap *wew = wl->next;
 	WlezwrapEvent e;
-	e.motion[0] = wl_fixed_to_double(x);
-	e.motion[1] = wl_fixed_to_double(y);
+	e.motion[0] = wl_fixed_to_double(x) * (double)wl->scale;
+	e.motion[1] = wl_fixed_to_double(y) * (double)wl->scale;
 	e.motion[2] = wew->pressure;
 	wew->event(wew->data, 2, &e);
 }
@@ -146,10 +150,20 @@ static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
 	uint32_t serial, uint32_t button, uint32_t state) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e;
-	e.key[0] = WLEZWRAP_MCLICK;
-	// TODO: what does button id mean?
-	if (button == 331) {
+	// very hacky way to ensure physical usage consistency between
+	// cintiq tablets and wacom AES laptops (like x1 yoga).
+	// The latter one use lower button for eraser
+	// and use upper button for middle button
+	if (wew->flip_button) {
+		e.key[0] = WLEZWRAP_MCLICK;
+		if (button == 331) {
+			e.key[0] = WLEZWRAP_RCLICK;
+		}
+	} else {
 		e.key[0] = WLEZWRAP_RCLICK;
+		if (button == 331) {
+			e.key[0] = WLEZWRAP_MCLICK;
+		}
 	}
 	e.key[1] = 0;
 	if (state == ZWP_TABLET_TOOL_V2_BUTTON_STATE_PRESSED) {
@@ -179,12 +193,23 @@ void wlezwrap_confgen(Wlezwrap* wew) {
 	wew->event = f_event;
 }
 
+static void tabname_hack(void *data, struct zwp_tablet_v2 *zwp_tablet_v2,
+	const char *name) {
+	Wlbasic *wl = data;
+	Wlezwrap* wew = wl->next;
+	if (strstr(name, "multitouch")) {
+		wew->flip_button = true;
+	}
+}
+
 void wlezwrap_init(Wlezwrap* wew) {
+	wew->flip_button = false;
 	wew->wl.conf.pointer_listener.button = wrapper_button;
 	wew->wl.conf.pointer_listener.motion = wrapper_motion;
 	wew->wl.conf.toplevel_listener.close = wrapper_quit;
 	wew->wl.conf.toplevel_listener.configure = wrapper_resize;
 	wew->wl.conf.keyboard_listener.key = wrapper_key;
+	wew->wl.conf.tablet_listener.name = tabname_hack;
 	wew->wl.conf.tabtool_listener.motion = wrapper_tabtool_motion;
 	wew->wl.conf.tabtool_listener.button = wrapper_tabtool_button;
 	wew->wl.conf.tabtool_listener.type = wrapper_tabtool_type;

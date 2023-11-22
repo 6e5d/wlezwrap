@@ -26,6 +26,7 @@ typedef struct {
 	Wlbasic wl;
 	void (*event)(void* data, uint8_t type, WlezwrapEvent *event);
 	void* data;
+	bool flip_button;
 	struct zwp_tablet_tool_v2* peraser; // eraser is treated as middle button
 	double pressure;
 } Wlezwrap;
