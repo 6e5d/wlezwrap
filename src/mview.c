@@ -26,9 +26,9 @@ void wlezwrap_mview_update(
 		bool pressed = e->key[1];
 		char key = e->key[0];
 		if (!pressed) {
-			if (key == WLEZWRAP_MCLICK) {
-				wewmv->click = false;
-			} else if (key < 0) { // modifiers
+			wewmv->click = false;
+			wewmv->drag = false;
+			if (key < 0) { // modifiers
 				wewmv->button = 0;
 			}
 			return;
