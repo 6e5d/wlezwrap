@@ -4,7 +4,7 @@
 
 #include "../include/wlezwrap.h"
 
-static const int8_t CHARMAP[] = {
+static const uint8_t CHARMAP[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 'q', 'w', 'e', 'r',
 	't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\r', WLEZWRAP_LCTRL,
@@ -20,8 +20,11 @@ static const int8_t CHARMAP[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-bool wlezwrap_isclick(int8_t key) {
-	return (key <= -1 && key >= -3);
+bool wlezwrap_isclick(uint8_t key) {
+	return (
+		key == WLEZWRAP_LCLICK ||
+		key == WLEZWRAP_MCLICK ||
+		key == WLEZWRAP_RCLICK);
 }
 
 // default do-nothing functions
@@ -32,7 +35,7 @@ static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
 	uint32_t serial, uint32_t time, uint32_t button, uint32_t state
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	int8_t b = 0;
+	uint8_t b = 0;
 	if (button == 272) {
 		b = WLEZWRAP_LCLICK;
 	} else if (button == 273) {
@@ -57,9 +60,9 @@ static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
 	Wlbasic *wl = data;
 	Wlezwrap* wew = wl->next;
 	WlezwrapEvent e;
-	e.motion[0] = wl_fixed_to_double(x) * (double)wl->scale;
-	e.motion[1] = wl_fixed_to_double(y) * (double)wl->scale;
-	e.motion[2] = wew->pressure;
+	e.motion[0] = (float)wl_fixed_to_double(x) * (float)wl->scale;
+	e.motion[1] = (float)wl_fixed_to_double(y) * (float)wl->scale;
+	e.motion[2] = (float)wew->pressure;
 	wew->event(wew->data, 2, &e);
 }
 
@@ -87,10 +90,14 @@ static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (key >= 128) { return; }
 	WlezwrapEvent e;
-	e.key[0] = CHARMAP[(size_t) key];
+	uint8_t k = CHARMAP[(size_t) key];
+	e.key[0] = k;
 	e.key[1] = 0;
 	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		e.key[1] = 1;
+		wew->keystate[(size_t)k] = true;
+	} else {
+		wew->keystate[(size_t)k] = false;
 	}
 	wew->event(wew->data, 3, &e);
 }
@@ -100,9 +107,9 @@ static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
 	Wlbasic *wl = data;
 	Wlezwrap *wew = wl->next;
 	WlezwrapEvent e;
-	e.motion[0] = wl_fixed_to_double(x) * (double)wl->scale;
-	e.motion[1] = wl_fixed_to_double(y) * (double)wl->scale;
-	e.motion[2] = wew->pressure;
+	e.motion[0] = (float)wl_fixed_to_double(x) * (float)wl->scale;
+	e.motion[1] = (float)wl_fixed_to_double(y) * (float)wl->scale;
+	e.motion[2] = (float)wew->pressure;
 	wew->event(wew->data, 2, &e);
 }
 
@@ -175,7 +182,7 @@ static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
 static void wrapper_tabtool_pressure(void *data,
 	struct zwp_tablet_tool_v2* tool, uint32_t pressure) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	wew->pressure = (double)pressure / 65536.0;
+	wew->pressure = (float)pressure / 65536.0f;
 }
 
 
