@@ -50,6 +50,9 @@ static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
 	e.key[1] = 0;
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
 		e.key[1] = 1;
+		wew->keystate[(size_t)b] = true;
+	} else {
+		wew->keystate[(size_t)b] = false;
 	}
 	wew->event(wew->data, 3, &e);
 }
