@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 #include <wayland-client.h>
 
 #include "../include/wlezwrap.h"

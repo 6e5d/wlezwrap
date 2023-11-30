@@ -1,5 +1,5 @@
-#ifndef INCLUDEGUARD_WLEZWRAP_WLEZWRAPH
-#define INCLUDEGUARD_WLEZWRAP_WLEZWRAPH
+#ifndef INCLUDEGUARD_WLEZWRAP
+#define INCLUDEGUARD_WLEZWRAP
 
 #define WLEZWRAP_LCLICK 128
 #define WLEZWRAP_MCLICK 129
@@ -7,9 +7,6 @@
 #define WLEZWRAP_LSHIFT 131
 #define WLEZWRAP_LCTRL 132
 #define WLEZWRAP_LALT 133
-
-#include <stdbool.h>
-#include <stdint.h>
 
 #include "../../wlbasic/include/wlbasic.h"
 
