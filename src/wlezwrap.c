@@ -26,11 +26,11 @@ bool wlezwrap_isclick(uint8_t key) {
 }
 
 // default do-nothing functions
-static void f_event(void* data, uint8_t type, WlezwrapEvent *event) {}
+static void f_event(void*, uint8_t, WlezwrapEvent*) {}
 
 // wrappers
-static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
-	uint32_t serial, uint32_t time, uint32_t button, uint32_t state
+static void wrapper_button(void* data, struct wl_pointer*,
+	uint32_t, uint32_t, uint32_t button, uint32_t state
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	uint8_t b = 0;
@@ -55,8 +55,8 @@ static void wrapper_button(void* data, struct wl_pointer *wl_pointer,
 	wew->event(wew->data, 3, &e);
 }
 
-static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
-	uint32_t time, wl_fixed_t x, wl_fixed_t y
+static void wrapper_motion(void *data, struct wl_pointer*,
+	uint32_t, wl_fixed_t x, wl_fixed_t y
 ) {
 	Wlbasic *wl = data;
 	Wlezwrap* wew = wl->next;
@@ -67,14 +67,14 @@ static void wrapper_motion(void *data, struct wl_pointer *wl_pointer,
 	wew->event(wew->data, 2, &e);
 }
 
-static void wrapper_quit(void* data, struct xdg_toplevel* toplevel) {
+static void wrapper_quit(void* data, struct xdg_toplevel*) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e = {0};
 	wew->event(wew->data, 0, &e);
 }
 
-static void wrapper_resize(void* data, struct xdg_toplevel* toplevel,
-	int32_t width, int32_t height, struct wl_array* states
+static void wrapper_resize(void *data, struct xdg_toplevel*,
+	int32_t width, int32_t height, struct wl_array*
 ) {
 	if (width <= 0 || height <= 0) { return; }
 	Wlbasic *wl = data;
@@ -85,8 +85,8 @@ static void wrapper_resize(void* data, struct xdg_toplevel* toplevel,
 	wew->event(wew->data, 1, &e);
 }
 
-static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
-	uint32_t serial, uint32_t time, uint32_t key, uint32_t state
+static void wrapper_key(void* data, struct wl_keyboard*,
+	uint32_t, uint32_t, uint32_t key, uint32_t state
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (key >= 128) { return; }
@@ -103,7 +103,7 @@ static void wrapper_key(void* data, struct wl_keyboard *wl_keyboard,
 	wew->event(wew->data, 3, &e);
 }
 
-static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
+static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2*,
 	wl_fixed_t x, wl_fixed_t y) {
 	Wlbasic *wl = data;
 	Wlezwrap *wew = wl->next;
@@ -114,15 +114,16 @@ static void wrapper_tabtool_motion(void *data, struct zwp_tablet_tool_v2* tool,
 	wew->event(wew->data, 2, &e);
 }
 
-static void wrapper_tabtool_down(void *data, struct zwp_tablet_tool_v2* tool,
-	uint32_t serial) {
+static void wrapper_tabtool_down(void *data,
+	struct zwp_tablet_tool_v2*, uint32_t
+) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e;
 	e.key[0] = WLEZWRAP_LCLICK;
 	e.key[1] = 1;
 	wew->event(wew->data, 3, &e);
 }
-static void wrapper_tabtool_up(void *data, struct zwp_tablet_tool_v2* tool) {
+static void wrapper_tabtool_up(void *data, struct zwp_tablet_tool_v2*) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e;
 	e.key[0] = WLEZWRAP_LCLICK;
@@ -131,9 +132,7 @@ static void wrapper_tabtool_up(void *data, struct zwp_tablet_tool_v2* tool) {
 }
 
 static void wrapper_tabtool_pin(void *data, struct zwp_tablet_tool_v2* tool,
-	uint32_t serial,
-	struct zwp_tablet_v2 *tablet,
-	struct wl_surface *surface
+	uint32_t, struct zwp_tablet_v2*, struct wl_surface*
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	if (tool == wew->peraser) {
@@ -154,8 +153,8 @@ static void wrapper_tabtool_pout(void *data, struct zwp_tablet_tool_v2* tool) {
 	}
 }
 
-static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
-	uint32_t serial, uint32_t button, uint32_t state) {
+static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2*,
+	uint32_t, uint32_t button, uint32_t state) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e;
 	// very hacky way to ensure physical usage consistency between
@@ -181,7 +180,8 @@ static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2* tool,
 }
 
 static void wrapper_tabtool_pressure(void *data,
-	struct zwp_tablet_tool_v2* tool, uint32_t pressure) {
+	struct zwp_tablet_tool_v2*, uint32_t pressure
+) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	wew->pressure = (float)pressure / 65536.0f;
 }
@@ -201,8 +201,7 @@ void wlezwrap_confgen(Wlezwrap* wew) {
 	wew->event = f_event;
 }
 
-static void tabname_hack(void *data, struct zwp_tablet_v2 *zwp_tablet_v2,
-	const char *name) {
+static void tabname_hack(void *data, struct zwp_tablet_v2*, const char *name) {
 	Wlbasic *wl = data;
 	Wlezwrap* wew = wl->next;
 	if (strstr(name, "multitouch")) {
