@@ -23,6 +23,7 @@ typedef union {
 typedef struct {
 	bool keystate[256];
 	bool hide_cursor;
+	uint32_t pointer_enter_serial;
 	Wlbasic wl;
 	void (*event)(void* data, uint8_t type, WlezwrapEvent *event);
 	void* data;

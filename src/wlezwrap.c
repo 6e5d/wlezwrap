@@ -61,6 +61,10 @@ static void wrapper_tabtool_pin(void* data,
 {
 	Wlbasic *wl = data;
 	Wlezwrap* wew = wl->next;
+	if (wew->hide_cursor) {
+		wl_pointer_set_cursor(wl->pointer, wew->pointer_enter_serial,
+			NULL, 0, 0);
+	}
 	wew->keystate[WLEZWRAP_PROXIMITY] = true;
 	WlezwrapEvent e;
 	e.key[0] = WLEZWRAP_PROXIMITY;
@@ -76,7 +80,6 @@ static void wrapper_tabtool_pout(void* data, struct zwp_tablet_tool_v2*) {
 	e.key[1] = false;
 	wew->event(wew->data, 3, &e);
 }
-
 
 static void wrapper_motion(void *data, struct wl_pointer*,
 	uint32_t, wl_fixed_t x, wl_fixed_t y
@@ -96,13 +99,11 @@ static void wrapper_quit(void* data, struct xdg_toplevel*) {
 	wew->event(wew->data, 0, &e);
 }
 
-static void wrapper_pointer_enter(void* data, struct wl_pointer *p,
+static void wrapper_pointer_enter(void* data, struct wl_pointer*,
 	uint32_t serial, struct wl_surface*, wl_fixed_t, wl_fixed_t
 ) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	if (wew->hide_cursor) {
-		wl_pointer_set_cursor(p, serial, NULL, 0, 0);
-	}
+	wew->pointer_enter_serial = serial;
 }
 
 static void wrapper_resize(void *data, struct xdg_toplevel*,
