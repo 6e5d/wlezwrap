@@ -7,6 +7,7 @@
 #define WLEZWRAP_LSHIFT 131
 #define WLEZWRAP_LCTRL 132
 #define WLEZWRAP_LALT 133
+#define WLEZWRAP_PROXIMITY 134
 
 #include "../../wlbasic/include/wlbasic.h"
 
@@ -21,6 +22,7 @@ typedef union {
 
 typedef struct {
 	bool keystate[256];
+	bool hide_cursor;
 	Wlbasic wl;
 	void (*event)(void* data, uint8_t type, WlezwrapEvent *event);
 	void* data;

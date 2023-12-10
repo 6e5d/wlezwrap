@@ -55,6 +55,29 @@ static void wrapper_button(void* data, struct wl_pointer*,
 	wew->event(wew->data, 3, &e);
 }
 
+static void wrapper_tabtool_pin(void* data,
+	struct zwp_tablet_tool_v2*, uint32_t,
+	struct zwp_tablet_v2*, struct wl_surface*)
+{
+	Wlbasic *wl = data;
+	Wlezwrap* wew = wl->next;
+	wew->keystate[WLEZWRAP_PROXIMITY] = true;
+	WlezwrapEvent e;
+	e.key[0] = WLEZWRAP_PROXIMITY;
+	e.key[1] = true;
+	wew->event(wew->data, 3, &e);
+}
+static void wrapper_tabtool_pout(void* data, struct zwp_tablet_tool_v2*) {
+	Wlbasic *wl = data;
+	Wlezwrap* wew = wl->next;
+	wew->keystate[WLEZWRAP_PROXIMITY] = false;
+	WlezwrapEvent e;
+	e.key[0] = WLEZWRAP_PROXIMITY;
+	e.key[1] = false;
+	wew->event(wew->data, 3, &e);
+}
+
+
 static void wrapper_motion(void *data, struct wl_pointer*,
 	uint32_t, wl_fixed_t x, wl_fixed_t y
 ) {
@@ -71,6 +94,15 @@ static void wrapper_quit(void* data, struct xdg_toplevel*) {
 	Wlezwrap* wew = ((Wlbasic*)data)->next;
 	WlezwrapEvent e = {0};
 	wew->event(wew->data, 0, &e);
+}
+
+static void wrapper_pointer_enter(void* data, struct wl_pointer *p,
+	uint32_t serial, struct wl_surface*, wl_fixed_t, wl_fixed_t
+) {
+	Wlezwrap* wew = ((Wlbasic*)data)->next;
+	if (wew->hide_cursor) {
+		wl_pointer_set_cursor(p, serial, NULL, 0, 0);
+	}
 }
 
 static void wrapper_resize(void *data, struct xdg_toplevel*,
@@ -129,28 +161,6 @@ static void wrapper_tabtool_up(void *data, struct zwp_tablet_tool_v2*) {
 	e.key[0] = WLEZWRAP_LCLICK;
 	e.key[1] = 0;
 	wew->event(wew->data, 3, &e);
-}
-
-static void wrapper_tabtool_pin(void *data, struct zwp_tablet_tool_v2* tool,
-	uint32_t, struct zwp_tablet_v2*, struct wl_surface*
-) {
-	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	if (tool == wew->peraser) {
-		WlezwrapEvent e;
-		e.key[0] = WLEZWRAP_MCLICK;
-		e.key[1] = 1;
-		wew->event(wew->data, 3, &e);
-	}
-}
-
-static void wrapper_tabtool_pout(void *data, struct zwp_tablet_tool_v2* tool) {
-	Wlezwrap* wew = ((Wlbasic*)data)->next;
-	if (tool == wew->peraser) {
-		WlezwrapEvent e;
-		e.key[0] = WLEZWRAP_MCLICK;
-		e.key[1] = 0;
-		wew->event(wew->data, 3, &e);
-	}
 }
 
 static void wrapper_tabtool_button(void *data, struct zwp_tablet_tool_v2*,
@@ -213,6 +223,7 @@ void wlezwrap_init(Wlezwrap* wew) {
 	wew->flip_button = false;
 	wew->wl.conf.pointer_listener.button = wrapper_button;
 	wew->wl.conf.pointer_listener.motion = wrapper_motion;
+	wew->wl.conf.pointer_listener.enter = wrapper_pointer_enter;
 	wew->wl.conf.toplevel_listener.close = wrapper_quit;
 	wew->wl.conf.toplevel_listener.configure = wrapper_resize;
 	wew->wl.conf.keyboard_listener.key = wrapper_key;
