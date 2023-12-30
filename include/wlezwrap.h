@@ -1,15 +1,13 @@
-#ifndef INCLUDEGUARD_WLEZWRAP
-#define INCLUDEGUARD_WLEZWRAP
-
+#include <wayland-client.h>
 #include "../../wlbasic/include/wlbasic.h"
-#define Tabtool zwp_tablet_tool_v2
-#define Tab zwp_tablet_v2
-#define WlPointer wl_pointer
-#define WlKeyboard wl_keyboard
-#define WlSurface wl_surface
-#define WlArray wl_array
-#define WlFixed wl_fixed_t
-#define XdgToplevel xdg_toplevel
+
+const static uint8_t wlezwrap(lclick) = 128;
+const static uint8_t wlezwrap(mclick) = 129;
+const static uint8_t wlezwrap(rclick) = 130;
+const static uint8_t wlezwrap(lshift) = 131;
+const static uint8_t wlezwrap(lctrl) = 132;
+const static uint8_t wlezwrap(lalt) = 133;
+const static uint8_t wlezwrap(proximity) = 134;
 
 bool wlezwrap(isclick)(uint8_t key);
 
@@ -26,15 +24,13 @@ typedef struct {
 	uint32_t pointer_enter_serial;
 	Wlbasic() wl;
 	void (*event)(void*, uint8_t, Wlezwrap(Event)*);
-	void* data;
+	void *data;
 	bool flip_button;
 	// eraser is treated as middle button
-	struct Tabtool* peraser;
+	struct zwp_tablet_tool_v2 *peraser;
 	float pressure; // pressure comes from independent event
 } Wlezwrap();
 
 void wlezwrap(confgen)(Wlezwrap()* wew);
 void wlezwrap(init)(Wlezwrap()* wew);
 void wlezwrap(deinit)(Wlezwrap()* wew);
-
-#endif
